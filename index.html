@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>爱心答题小游戏</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: linear-gradient(160deg, #fff0f3 0%, #ffe3ea 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px 60px;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 20px;
+    padding: 28px 22px;
+    box-shadow: 0 10px 30px rgba(255, 60, 90, 0.15);
+    text-align: center;
+  }
+  h1 { color: #ff4d67; font-size: 24px; margin-bottom: 8px; }
+  .sub { color: #999; font-size: 14px; margin-bottom: 24px; }
+  .q { font-size: 20px; font-weight: 600; color: #333; min-height: 60px;
+       display: flex; align-items: center; justify-content: center; line-height: 1.5; }
+  .chances { color: #ff4d67; font-size: 15px; margin: 10px 0; }
+  input[type=text] {
+    width: 100%; padding: 14px; font-size: 18px; border: 2px solid #ffc2cd;
+    border-radius: 12px; text-align: center; outline: none; margin: 14px 0;
+    background: #fffafb;
+  }
+  input[type=text]:focus { border-color: #ff4d67; }
+  .btn {
+    width: 100%; padding: 15px; font-size: 18px; font-weight: 600;
+    background: linear-gradient(135deg, #ff6b81, #ff4d67);
+    border: none; color: #fff; border-radius: 14px; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255,77,103,0.3);
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.ghost {
+    background: #fff; color: #ff4d67; border: 2px solid #ff4d67;
+    box-shadow: none; margin-top: 10px;
+  }
+  .msg { margin-top: 16px; font-size: 16px; min-height: 24px; color: #e6455d; }
+  .heart {
+    font-size: 12px; line-height: 1.1; color: #ff4d67; text-align: center;
+    margin-top: 10px; white-space: pre; overflow-x: auto;
+  }
+  .end-title { font-size: 20px; color: #ff4d67; font-weight: 700; margin-bottom: 6px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>❤ 爱心答题 ❤</h1>
+  <div class="sub">答出来的，都是心里最重要的那个人</div>
+
+  <!-- 输入名字 -->
+  <div id="step-name">
+    <div class="q">你叫什么名字呀？（1~4个字）</div>
+    <input type="text" id="nameInput" maxlength="4" placeholder="请输入昵称">
+    <button class="btn" onclick="startQuiz()">开始答题</button>
+  </div>
+
+  <!-- 答题 -->
+  <div id="step-quiz" class="hidden">
+    <div class="q" id="questionText"></div>
+    <div class="chances" id="chancesText"></div>
+    <input type="text" id="answerInput" maxlength="20" placeholder="请输入你的答案">
+    <button class="btn" onclick="submitAnswer()">提交答案</button>
+    <div class="msg" id="quizMsg"></div>
+  </div>
+
+  <!-- 结束 -->
+  <div id="step-end" class="hidden">
+    <div class="end-title" id="endTitle"></div>
+    <div class="sub" id="endSub"></div>
+    <div class="heart" id="heartBox"></div>
+    <br>
+    <button class="btn ghost" onclick="restart()">再玩一次</button>
+  </div>
+</div>
+
+<script>
+var QUESTIONS = [
+  "世界上最善良的人是谁？",
+  "世界上最帅气的人是谁？",
+  "世界上最重视你的人是谁？",
+  "今天最幸运的人是谁？",
+  "最聪明的人是谁？",
+  "最值得好好休息的人是谁？"
+];
+// 每题的两种可接受答案
+var ANSWERS = ["我自己", "我"];
+
+var name = "";
+var chances = 3;
+var idx = 0;
+var allDone = false;
+
+function $(id) { return document.getElementById(id); }
+
+function show(id) {
+  ["step-name", "step-quiz", "step-end"].forEach(function (s) {
+    $(s).classList.toggle("hidden", s !== id);
+  });
+}
+
+function startQuiz() {
+  var n = $("nameInput").value.trim();
+  if (n.length < 1 || n.length > 4) {
+    $("nameInput").placeholder = "名字要 1~4 个字哦";
+    return;
+  }
+  name = n;
+  chances = 3;
+  idx = 0;
+  allDone = true;
+  show("step-quiz");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  $("questionText").innerHTML = "第 " + (idx + 1) + " 题：" + QUESTIONS[idx];
+  $("chancesText").innerHTML = "❤".repeat(chances);
+  $("quizMsg").innerHTML = "";
+  $("answerInput").value = "";
+  $("answerInput").focus();
+}
+
+function submitAnswer() {
+  var a = $("answerInput").value.trim();
+  if (!a) return;
+  if (ANSWERS.indexOf(a) >= 0) {
+    $("quizMsg").innerHTML = "好棒啊，回答正确了哦！";
+    idx++;
+    if (idx >= QUESTIONS.length) {
+      endGame(true);
+    } else {
+      renderQuestion();
+    }
+  } else {
+    chances--;
+    if (chances <= 0) {
+      allDone = false;
+      $("quizMsg").innerHTML = "可惜可惜，没有机会了…";
+      endGame(false);
+    } else {
+      $("quizMsg").innerHTML = "回答错误啦，还有 " + chances + " 次机会";
+      $("chancesText").innerHTML = "❤".repeat(chances);
+      $("answerInput").value = "";
+    }
+  }
+}
+
+function endGame(win) {
+  document.getElementById("quizMsg").innerHTML = "";
+  show("step-end");
+  if (win) {
+    $("endTitle").innerHTML = "全部答对啦！";
+    $("endSub").innerHTML = "没有谁会比你自己更重要的哦！";
+  } else {
+    $("endTitle").innerHTML = "游戏结束";
+    $("endSub").innerHTML = "你要多久才会想到自己呢？";
+  }
+  renderHeart();
+}
+
+function renderHeart() {
+  // 完整爱心模板，* 会替换成 ❤
+  var tpl = [
+    "   ***      ***",
+    "  *****    *****",
+    " *******  *******",
+    "*****************",
+    " *************** ",
+    "  *************  ",
+    "   ***********   ",
+    "    *********    ",
+    "     *******     ",
+    "      *****      ",
+    "       ***       ",
+    "        *        "
+  ];
+  // 把名字居中写入第5行
+  var nameRow = 5;
+  var nameStr = " " + name + " ";
+  var row = tpl[nameRow].split("");
+  var stars = [];
+  for (var i = 0; i < row.length; i++) if (row[i] === "*") stars.push(i);
+  var start = Math.floor((stars.length - nameStr.length) / 2);
+  for (var k = 0; k < nameStr.length; k++) {
+    row[stars[start + k]] = nameStr[k];
+  }
+  tpl[nameRow] = row.join("");
+  var out = tpl.map(function (line) {
+    return line.replace(/\*/g, "❤") + "\n";
+  }).join("");
+  $("heartBox").textContent = out;
+}
+
+function restart() {
+  window.location.reload();
+}
+</script>
+</body>
+</html>
